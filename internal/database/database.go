@@ -23,8 +23,9 @@ type Chirp struct {
 }
 
 type User struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
+	ID       int    `json:"id"`
+	Email    string `json:"email"`
+	Password []byte `json:"password"`
 }
 
 func NewDatabase(path string) (*Database, error) {
@@ -122,16 +123,24 @@ func (db *Database) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
-func (db *Database) CreateUser(email string) (User, error) {
+func (db *Database) CreateUser(email string, password []byte) (User, error) {
 	usersMap, err := db.loadDB()
 	if err != nil {
 		return User{}, err
 	}
 
+	for _, user := range usersMap.Users {
+		if user.Email == email {
+			return User{}, errors.New("user already exists")
+		}
+
+	}
+
 	id := len(usersMap.Users) + 1
 	user := User{
-		ID:    id,
-		Email: email,
+		ID:       id,
+		Email:    email,
+		Password: password,
 	}
 
 	usersMap.Users[id] = user
@@ -141,4 +150,19 @@ func (db *Database) CreateUser(email string) (User, error) {
 	}
 
 	return user, nil
+}
+
+func (db *Database) GetUserByEmail(email string) (User, error) {
+	usersMap, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	for _, user := range usersMap.Users {
+		if user.Email == email {
+			return user, nil
+		}
+	}
+
+	return User{}, errors.New("user not found")
 }

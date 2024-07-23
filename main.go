@@ -36,6 +36,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", apiCfg.getChirpsHandler)
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirpHandlerSpecific)
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
+	mux.HandleFunc("POST /api/login", apiCfg.loginHandler)
 
 	err = server.ListenAndServe()
 	if err != nil {

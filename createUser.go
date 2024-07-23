@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strings"
 )
 
 func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email string `json:"email"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 
 	type response struct {
@@ -17,11 +18,9 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 		Email string `json:"email"`
 	}
 
-	fmt.Println("creating a decoder")
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
-	fmt.Println("decoding finished")
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request")
 		return
@@ -31,15 +30,21 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 		respondWithError(w, http.StatusBadRequest, "Invalid email")
 		return
 	}
-	fmt.Println("creating a user")
-	user, err := cfg.db.CreateUser(params.Email)
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
+
+	user, err := cfg.db.CreateUser(params.Email, hashedPassword)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
 	respondWithJSON(w, http.StatusCreated, response{
 		ID:    user.ID,
 		Email: user.Email,
 	})
-	fmt.Println("user created")
 }
