@@ -14,11 +14,17 @@ type Database struct {
 
 type Structure struct {
 	Chirps map[int]Chirp `json:"chirps"`
+	Users  map[int]User  `json:"users"`
 }
 
 type Chirp struct {
 	ID   int    `json:"id"`
 	Body string `json:"body"`
+}
+
+type User struct {
+	ID    int    `json:"id"`
+	Email string `json:"email"`
 }
 
 func NewDatabase(path string) (*Database, error) {
@@ -39,6 +45,7 @@ func (db *Database) createDBIfNotExists() error {
 	if errors.Is(err, os.ErrNotExist) {
 		structure := Structure{
 			Chirps: map[int]Chirp{},
+			Users:  map[int]User{},
 		}
 		return db.writeDB(structure)
 	}
@@ -113,4 +120,25 @@ func (db *Database) GetChirps() ([]Chirp, error) {
 	}
 
 	return chirps, nil
+}
+
+func (db *Database) CreateUser(email string) (User, error) {
+	usersMap, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	id := len(usersMap.Users) + 1
+	user := User{
+		ID:    id,
+		Email: email,
+	}
+
+	usersMap.Users[id] = user
+	err = db.writeDB(usersMap)
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
 }
