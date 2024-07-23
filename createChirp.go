@@ -6,13 +6,14 @@ import (
 	"strings"
 )
 
-func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body string `json:"body"`
 	}
 
-	type validResponse struct {
-		CleanedBody string `json:"cleaned_body"`
+	type response struct {
+		ID   int    `json:"id"`
+		Body string `json:"body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -29,7 +30,15 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, validResponse{CleanedBody: replaceBadWords(params.Body)})
+	chirp, err := cfg.db.CreateChirp(params.Body)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+	respondWithJSON(w, http.StatusCreated, response{
+		ID:   chirp.ID,
+		Body: replaceBadWords(chirp.Body),
+	})
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
