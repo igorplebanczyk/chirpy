@@ -28,6 +28,7 @@ type User struct {
 	Email        string       `json:"email"`
 	Password     []byte       `json:"password"`
 	RefreshToken RefreshToken `json:"refresh_token"`
+	IsChirpyRed  bool         `json:"is_chirpy_red"`
 }
 
 type RefreshToken struct {
@@ -180,15 +181,30 @@ func (db *Database) CreateUser(email string, password []byte) (User, error) {
 
 	id := len(usersMap.Users) + 1
 	user := User{
-		ID:       id,
-		Email:    email,
-		Password: password,
+		ID:          id,
+		Email:       email,
+		Password:    password,
+		IsChirpyRed: false,
 	}
 
 	usersMap.Users[id] = user
 	err = db.writeDB(usersMap)
 	if err != nil {
 		return User{}, err
+	}
+
+	return user, nil
+}
+
+func (db *Database) GetUserByID(id int) (User, error) {
+	usersMap, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	user, ok := usersMap.Users[id]
+	if !ok {
+		return User{}, errors.New("user not found")
 	}
 
 	return user, nil
@@ -290,4 +306,26 @@ func (db *Database) RevokeRefreshToken(token string) error {
 	}
 
 	return errors.New("refresh token not found")
+}
+
+func (db *Database) UpdateUserChirpyRedStatus(userID int, isChirpyRed bool) error {
+	usersMap, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user, ok := usersMap.Users[userID]
+	if !ok {
+		return errors.New("user not found")
+	}
+
+	user.IsChirpyRed = isChirpyRed
+	usersMap.Users[userID] = user
+
+	err = db.writeDB(usersMap)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

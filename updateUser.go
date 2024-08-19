@@ -18,8 +18,9 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	type response struct {
-		ID    int    `json:"id"`
-		Email string `json:"email"`
+		ID          int    `json:"id"`
+		Email       string `json:"email"`
+		IsChirpyRed bool   `json:"is_chirpy_red"`
 	}
 
 	userID, err := cfg.GetAuthenticatedUserID(r)
@@ -53,9 +54,16 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	user, err := cfg.db.GetUserByID(userID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
 	respondWithJSON(w, http.StatusOK, response{
-		ID:    userID,
-		Email: params.Email,
+		ID:          user.ID,
+		Email:       params.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	})
 }
 
