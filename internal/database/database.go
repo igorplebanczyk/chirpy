@@ -234,3 +234,24 @@ func (db *Database) GetRefreshToken(token string) (RefreshToken, User, error) {
 
 	return RefreshToken{}, User{}, errors.New("refresh token not found")
 }
+
+func (db *Database) RevokeRefreshToken(token string) error {
+	usersMap, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	for _, user := range usersMap.Users {
+		if user.RefreshToken.Token == token {
+			user.RefreshToken = RefreshToken{}
+			usersMap.Users[user.ID] = user
+			err = db.writeDB(usersMap)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	return errors.New("refresh token not found")
+}
