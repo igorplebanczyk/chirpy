@@ -23,9 +23,15 @@ type Chirp struct {
 }
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password []byte `json:"password"`
+	ID           int          `json:"id"`
+	Email        string       `json:"email"`
+	Password     []byte       `json:"password"`
+	RefreshToken RefreshToken `json:"refresh_token"`
+}
+
+type RefreshToken struct {
+	Token     string `json:"token"`
+	ExpiresAt int    `json:"expires_at"`
 }
 
 func NewDatabase(path string) (*Database, error) {
@@ -180,6 +186,29 @@ func (db *Database) UpdateUser(id int, email string, password []byte) error {
 
 	user.Email = email
 	user.Password = password
+
+	usersMap.Users[id] = user
+
+	err = db.writeDB(usersMap)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *Database) AddRefreshToken(id int, refreshToken RefreshToken) error {
+	usersMap, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user, ok := usersMap.Users[id]
+	if !ok {
+		return errors.New("user not found")
+	}
+
+	user.RefreshToken = refreshToken
 
 	usersMap.Users[id] = user
 
