@@ -22,32 +22,9 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 		Email string `json:"email"`
 	}
 
-	token, err := RetrieveTokenFromHeader(r)
+	userID, err := cfg.GetAuthenticatedUserID(r)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	parsedToken, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(cfg.jwtSecret), nil
-	})
-	if err != nil || !parsedToken.Valid {
-		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	claims, ok := parsedToken.Claims.(*jwt.RegisteredClaims)
-	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	userID, err := strconv.Atoi(claims.Subject)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Internal server error")
+		respondWithError(w, http.StatusUnauthorized, "Failed to authenticate user")
 		return
 	}
 
@@ -80,6 +57,35 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 		ID:    userID,
 		Email: params.Email,
 	})
+}
+
+func (cfg *apiConfig) GetAuthenticatedUserID(r *http.Request) (int, error) {
+	token, err := RetrieveTokenFromHeader(r)
+	if err != nil {
+		return -1, fmt.Errorf("no token provided")
+	}
+
+	parsedToken, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(cfg.jwtSecret), nil
+	})
+	if err != nil || !parsedToken.Valid {
+		return -1, fmt.Errorf("invalid token")
+	}
+
+	claims, ok := parsedToken.Claims.(*jwt.RegisteredClaims)
+	if !ok {
+		return -1, fmt.Errorf("invalid claims type")
+	}
+
+	userID, err := strconv.Atoi(claims.Subject)
+	if err != nil {
+		return -1, fmt.Errorf("failed to parse user ID")
+	}
+
+	return userID, nil
 }
 
 func RetrieveTokenFromHeader(r *http.Request) (string, error) {

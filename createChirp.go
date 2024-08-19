@@ -12,13 +12,20 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	type response struct {
-		ID   int    `json:"id"`
-		Body string `json:"body"`
+		ID       int    `json:"id"`
+		Body     string `json:"body"`
+		AuthorID int    `json:"author_id"`
+	}
+
+	userID, err := cfg.GetAuthenticatedUserID(r)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request")
@@ -30,14 +37,15 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	chirp, err := cfg.db.CreateChirp(params.Body)
+	chirp, err := cfg.db.CreateChirp(params.Body, userID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 	respondWithJSON(w, http.StatusCreated, response{
-		ID:   chirp.ID,
-		Body: replaceBadWords(chirp.Body),
+		ID:       chirp.ID,
+		Body:     replaceBadWords(chirp.Body),
+		AuthorID: userID,
 	})
 }
 

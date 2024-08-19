@@ -17,8 +17,9 @@ func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
 	var chirps []database.Chirp
 	for _, dbChirp := range dbChirps {
 		chirps = append(chirps, database.Chirp{
-			ID:   dbChirp.ID,
-			Body: dbChirp.Body,
+			ID:       dbChirp.ID,
+			Body:     dbChirp.Body,
+			AuthorID: dbChirp.AuthorID,
 		})
 	}
 
@@ -45,8 +46,9 @@ func (cfg *apiConfig) getChirpHandlerSpecific(w http.ResponseWriter, r *http.Req
 	var chirps []database.Chirp
 	for _, dbChirp := range dbChirps {
 		chirps = append(chirps, database.Chirp{
-			ID:   dbChirp.ID,
-			Body: dbChirp.Body,
+			ID:       dbChirp.ID,
+			Body:     dbChirp.Body,
+			AuthorID: dbChirp.AuthorID,
 		})
 	}
 
