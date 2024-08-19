@@ -31,7 +31,7 @@ type User struct {
 
 type RefreshToken struct {
 	Token     string `json:"token"`
-	ExpiresAt int    `json:"expires_at"`
+	ExpiresAt int64  `json:"expires_at"`
 }
 
 func NewDatabase(path string) (*Database, error) {
@@ -218,4 +218,19 @@ func (db *Database) AddRefreshToken(id int, refreshToken RefreshToken) error {
 	}
 
 	return nil
+}
+
+func (db *Database) GetRefreshToken(token string) (RefreshToken, User, error) {
+	usersMap, err := db.loadDB()
+	if err != nil {
+		return RefreshToken{}, User{}, err
+	}
+
+	for _, user := range usersMap.Users {
+		if user.RefreshToken.Token == token {
+			return user.RefreshToken, user, nil
+		}
+	}
+
+	return RefreshToken{}, User{}, errors.New("refresh token not found")
 }

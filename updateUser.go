@@ -22,7 +22,7 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 		Email string `json:"email"`
 	}
 
-	token, err := retrieveTokenFromHeader(r)
+	token, err := RetrieveTokenFromHeader(r)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
@@ -82,7 +82,7 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
-func retrieveTokenFromHeader(r *http.Request) (string, error) {
+func RetrieveTokenFromHeader(r *http.Request) (string, error) {
 	token := r.Header.Get("Authorization")
 	if token == "" {
 		return "", errors.New("no token provided")

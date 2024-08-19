@@ -46,14 +46,7 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.RegisteredClaims{
-		Subject:   strconv.Itoa(user.ID),
-		Issuer:    "chirpy",
-		IssuedAt:  &jwt.NumericDate{Time: time.Now().UTC()},
-		ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour).UTC()},
-	})
-
-	signedToken, err := token.SignedString([]byte(cfg.jwtSecret))
+	signedToken, err := cfg.GenerateAccessToken(user)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Internal server error")
 		return
@@ -67,7 +60,7 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	refreshToken := database.RefreshToken{
 		Token:     refreshTokenString,
-		ExpiresAt: int(time.Now().Add(time.Hour * 24 * 60).Unix()), // 60 days
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 60).Unix(), // 60 days
 	}
 
 	err = cfg.db.AddRefreshToken(user.ID, refreshToken)
@@ -82,6 +75,22 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		Token:        signedToken,
 		RefreshToken: refreshToken.Token,
 	})
+}
+
+func (cfg *apiConfig) GenerateAccessToken(user database.User) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.RegisteredClaims{
+		Subject:   strconv.Itoa(user.ID),
+		Issuer:    "chirpy",
+		IssuedAt:  &jwt.NumericDate{Time: time.Now().UTC()},
+		ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour).UTC()},
+	})
+
+	signedToken, err := token.SignedString([]byte(cfg.jwtSecret))
+	if err != nil {
+		return "", fmt.Errorf("could not sign token: %w", err)
+	}
+
+	return signedToken, nil
 }
 
 func generateRefreshToken() (string, error) {
