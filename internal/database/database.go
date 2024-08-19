@@ -131,6 +131,40 @@ func (db *Database) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
+func (db *Database) GetChirpByID(id int) (Chirp, error) {
+	chirpsMap, err := db.loadDB()
+	if err != nil {
+		return Chirp{}, err
+	}
+
+	chirp, ok := chirpsMap.Chirps[id]
+	if !ok {
+		return Chirp{}, errors.New("chirp not found")
+	}
+
+	return chirp, nil
+}
+
+func (db *Database) DeleteChirp(id int) error {
+	chirpsMap, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	_, ok := chirpsMap.Chirps[id]
+	if !ok {
+		return errors.New("chirp not found")
+	}
+
+	delete(chirpsMap.Chirps, id)
+	err = db.writeDB(chirpsMap)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (db *Database) CreateUser(email string, password []byte) (User, error) {
 	usersMap, err := db.loadDB()
 	if err != nil {

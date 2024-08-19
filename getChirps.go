@@ -37,30 +37,11 @@ func (cfg *apiConfig) getChirpHandlerSpecific(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	dbChirps, err := cfg.db.GetChirps()
+	chirp, err := cfg.db.GetChirpByID(requestedID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
-		return
-	}
-
-	var chirps []database.Chirp
-	for _, dbChirp := range dbChirps {
-		chirps = append(chirps, database.Chirp{
-			ID:       dbChirp.ID,
-			Body:     dbChirp.Body,
-			AuthorID: dbChirp.AuthorID,
-		})
-	}
-
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
-	})
-
-	if requestedID < 1 || requestedID > len(chirps) {
 		respondWithError(w, http.StatusNotFound, "Chirp not found")
 		return
 	}
 
-	requestedChirp := chirps[requestedID-1]
-	respondWithJSON(w, http.StatusOK, requestedChirp)
+	respondWithJSON(w, http.StatusOK, chirp)
 }
