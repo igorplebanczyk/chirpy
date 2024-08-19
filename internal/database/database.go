@@ -166,3 +166,27 @@ func (db *Database) GetUserByEmail(email string) (User, error) {
 
 	return User{}, errors.New("user not found")
 }
+
+func (db *Database) UpdateUser(id int, email string, password []byte) error {
+	usersMap, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user, ok := usersMap.Users[id]
+	if !ok {
+		return errors.New("user not found")
+	}
+
+	user.Email = email
+	user.Password = password
+
+	usersMap.Users[id] = user
+
+	err = db.writeDB(usersMap)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
