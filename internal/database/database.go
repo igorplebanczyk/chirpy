@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"sort"
 	"sync"
 )
 
@@ -144,6 +145,26 @@ func (db *Database) GetChirpByID(id int) (Chirp, error) {
 	}
 
 	return chirp, nil
+}
+
+func (db *Database) GetChirpsByAuthorID(authorID int) ([]Chirp, error) {
+	chirpsMap, err := db.loadDB()
+	if err != nil {
+		return nil, err
+	}
+
+	chirps := make([]Chirp, 0)
+	for _, chirp := range chirpsMap.Chirps {
+		if chirp.AuthorID == authorID {
+			chirps = append(chirps, chirp)
+		}
+	}
+
+	sort.Slice(chirps, func(i, j int) bool {
+		return chirps[i].ID < chirps[j].ID
+	})
+
+	return chirps, nil
 }
 
 func (db *Database) DeleteChirp(id int) error {
